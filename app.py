@@ -27,7 +27,7 @@ from equipe_mestre.agentes import AgentesEquipeMestre
 from equipe_mestre.tarefas import TarefasEquipeMestre
 from equipe_mestre.ferramentas import catalogo_de_ferramentas
 
-# Carrega as variáveis de ambiente do arquivo .env
+# Carrega as variáveis de ambiente do arquivo .env (para desenvolvimento local)
 load_dotenv()
 
 # --- FUNÇÃO HELPER PARA EXTRAIR TEXTO ---
@@ -86,24 +86,39 @@ with col2:
 
 st.divider()
 
+# Verifica se a chave de API está disponível antes de mostrar o botão
+# para dar um feedback mais rápido ao usuário.
+try:
+    # No Streamlit Cloud, st.secrets sempre existe.
+    # A verificação de chave vazia é mais importante.
+    if "OPENAI_API_KEY" not in st.secrets or not st.secrets["OPENAI_API_KEY"]:
+        st.error("A chave `OPENAI_API_KEY` não está configurada nos Secrets do Streamlit.")
+        st.info("Por favor, adicione sua chave da OpenAI nos Secrets da aplicação para continuar.")
+        st.stop()
+    if "OPENAI_MODEL_NAME" not in st.secrets or not st.secrets["OPENAI_MODEL_NAME"]:
+        st.error("A chave `OPENAI_MODEL_NAME` não está configurada nos Secrets do Streamlit.")
+        st.info("Por favor, adicione o nome do modelo (ex: gpt-4o) nos Secrets da aplicação.")
+        st.stop()
+except FileNotFoundError:
+    # Se st.secrets não existe (desenvolvimento local sem .streamlit/secrets.toml)
+    # verifica as variáveis de ambiente carregadas pelo load_dotenv()
+    if not os.getenv("OPENAI_API_KEY"):
+         st.error("Chave de API não encontrada. Crie um arquivo .env ou configure os Secrets.")
+         st.stop()
+
+
 if st.button("Gerar Equipe de Agentes"):
-    # Validação da chave de API
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        try:
-            api_key = st.secrets["OPENAI_API_KEY"]
-            os.environ["OPENAI_API_KEY"] = api_key
-        except (FileNotFoundError, KeyError):
-            st.error("A chave OPENAI_API_KEY não foi encontrada. Configure-a nos Secrets do Streamlit Cloud.")
-            st.stop()
-    
-    if not api_key:
-        st.error("A chave OPENAI_API_KEY está vazia. Verifique seus Secrets.")
+    # Define as variáveis de ambiente a partir dos secrets para o restante do código usar
+    os.environ["OPENAI_API_KEY"] = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+    os.environ["OPENAI_MODEL_NAME"] = st.secrets.get("OPENAI_MODEL_NAME", os.getenv("OPENAI_MODEL_NAME"))
+
+    if not prompt_usuario:
+        st.error("Por favor, descreva a necessidade da equipe antes de continuar.")
         st.stop()
 
     with st.spinner("Aguarde... A equipe-mestre está se reunindo para analisar sua solicitação..."):
         
-        contexto_arquivo_texto = extrair_texto_de_arquivo(arquivo_contexto_carregado)
+        contexto_arquivo_texto = extrair_texto_de_arquivo(arquivo_carregado)
         
         # --- MONTAGEM E EXECUÇÃO DA EQUIPE-MESTRE ---
         
@@ -128,8 +143,6 @@ if st.button("Gerar Equipe de Agentes"):
         tarefa_ferramentas = tarefas_creator.identificar_ferramentas(agent=especialista)
         tarefa_projeto = tarefas_creator.projetar_equipe(agent=designer)
         tarefa_implementacao = tarefas_creator.implementar_equipe_python(agent=implementador)
-        
-        # CORREÇÃO APLICADA AQUI
         tarefa_validacao = tarefas_creator.validar_codigo(agent=validador)
         
         # Definindo o contexto (dependências) para cada tarefa.
