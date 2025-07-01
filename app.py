@@ -14,13 +14,12 @@ import streamlit as st
 from dotenv import load_dotenv
 import os
 import fitz  # PyMuPDF
-import re # Importar a biblioteca de expressões regulares
+import re
 
 from crewai import Crew, Process
 from crewai.agent import Agent 
 from crewai.task import Task 
 
-# Importando as classes que criamos
 from equipe_mestre.agentes import AgentesEquipeMestre
 from equipe_mestre.tarefas import TarefasEquipeMestre
 from equipe_mestre.ferramentas import catalogo_de_ferramentas
@@ -28,10 +27,11 @@ from equipe_mestre.ferramentas import catalogo_de_ferramentas
 # Carrega as variáveis de ambiente do arquivo .env (para desenvolvimento local)
 load_dotenv()
 
-# --- FUNÇÃO HELPER PARA EXTRAIR TEXTO ---
+# --- FUNÇÕES HELPER (inalteradas) ---
 def extrair_texto_de_arquivo(arquivo_carregado):
     if arquivo_carregado is None:
         return ""
+    # Evita problemas de caminho salvando com o nome original temporariamente
     nome_arquivo = arquivo_carregado.name
     with open(nome_arquivo, "wb") as f:
         f.write(arquivo_carregado.getbuffer())
@@ -51,9 +51,7 @@ def extrair_texto_de_arquivo(arquivo_carregado):
             os.remove(nome_arquivo)
     return texto
 
-# --- FUNÇÃO HELPER PARA EXTRAIR SAÍDA ---
 def get_task_output_as_string(task_output) -> str:
-    """Extrai a saída da tarefa de forma mais robusta."""
     if task_output is None:
         return ""
     if hasattr(task_output, 'raw_output') and task_output.raw_output:
@@ -66,8 +64,7 @@ st.set_page_config(page_title="Gerador de Equipes de IA", layout="wide")
 st.title("🤖 Gerador de Equipes de IA com CrewAI")
 st.info(
     "Descreva o objetivo da equipe que você precisa e, se necessário, "
-    "anexe um arquivo de contexto (como um cardápio, catálogo ou relatório) "
-    "para gerar uma equipe de agentes de IA personalizada."
+    "anexe um arquivo de contexto para gerar uma equipe de IA personalizada."
 )
 
 col1, col2 = st.columns(2)
@@ -84,48 +81,53 @@ with col2:
 
 st.divider()
 
+# Bloco para verificar a configuração de API e parar a execução se necessário
+try:
+    if "OPENAI_API_KEY" not in st.secrets or not st.secrets["OPENAI_API_KEY"]:
+        st.error("A chave `OPENAI_API_KEY` não está configurada nos Secrets do Streamlit.")
+        st.info("Por favor, adicione sua chave da OpenAI nos Secrets da aplicação para o deploy funcionar.")
+        st.stop()
+except (FileNotFoundError, KeyError):
+    if not os.getenv("OPENAI_API_KEY"):
+         st.error("Chave de API não encontrada. Para desenvolvimento local, crie um arquivo .env com sua OPENAI_API_KEY.")
+         st.stop()
 
 if st.button("Gerar Equipe de Agentes"):
-    # ⚠️ LÓGICA DE VERIFICAÇÃO DE SECRETS REMOVIDA PARA O TESTE ⚠️
+    # Define as variáveis de ambiente a partir dos secrets para o restante do código usar
+    os.environ["OPENAI_API_KEY"] = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+    os.environ["OPENAI_MODEL_NAME"] = st.secrets.get("OPENAI_MODEL_NAME", os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
+
     if not prompt_usuario:
         st.error("Por favor, descreva a necessidade da equipe antes de continuar.")
     else:
         with st.spinner("Aguarde... A equipe-mestre está se reunindo para analisar sua solicitação..."):
-            
             contexto_arquivo_texto = extrair_texto_de_arquivo(arquivo_contexto_carregado)
-            
-            # --- MONTAGEM E EXECUÇÃO DA EQUIPE-MESTRE ---
-            
             agentes_creator = AgentesEquipeMestre()
             tarefas_creator = TarefasEquipeMestre()
 
-            # Agentes
+            # Agentes e Tarefas
             analista = agentes_creator.analista_de_requisitos()
-            especialista = agentes_creator.especialista_em_ferramentas(
-                ferramentas_disponiveis=[catalogo_de_ferramentas]
-            )
-            designer = agentes_creator.designer_de_equipes()
-            implementador = agentes_creator.implementador_de_equipes_python()
-            validador = agentes_creator.validador_de_codigo()
-
-            # Tarefas
-            tarefa_analise = tarefas_creator.analisar_requisitos(
-                agent=analista, 
-                comando_usuario=prompt_usuario,
-                contexto_arquivo=contexto_arquivo_texto
-            )
+            tarefa_analise = tarefas_creator.analisar_requisitos(agent=analista, comando_usuario=prompt_usuario, contexto_arquivo=contexto_arquivo_texto)
+            
+            especialista = agentes_creator.especialista_em_ferramentas(ferramentas_disponiveis=[catalogo_de_ferramentas])
             tarefa_ferramentas = tarefas_creator.identificar_ferramentas(agent=especialista)
+
+            designer = agentes_creator.designer_de_equipes()
             tarefa_projeto = tarefas_creator.projetar_equipe(agent=designer)
+
+            implementador = agentes_creator.implementador_de_equipes_python()
             tarefa_implementacao = tarefas_creator.implementar_equipe_python(agent=implementador)
+            
+            validador = agentes_creator.validador_de_codigo()
             tarefa_validacao = tarefas_creator.validar_codigo(agent=validador)
             
-            # Definindo o contexto (dependências) para cada tarefa.
+            # Contexto
             tarefa_ferramentas.context = [tarefa_analise]
             tarefa_projeto.context = [tarefa_analise, tarefa_ferramentas]
             tarefa_implementacao.context = [tarefa_projeto]
             tarefa_validacao.context = [tarefa_implementacao]
 
-            # A Crew é criada com as tarefas definidas.
+            # Crew
             equipe_mestre_completa = Crew(
                 agents=[analista, especialista, designer, implementador, validador],
                 tasks=[tarefa_analise, tarefa_ferramentas, tarefa_projeto, tarefa_implementacao, tarefa_validacao],
@@ -156,12 +158,3 @@ if st.button("Gerar Equipe de Agentes"):
             except Exception as e:
                 st.error(f"Ocorreu um erro durante a execução da equipe: {e}")
                 st.info("Verifique se sua chave de API do LLM está configurada corretamente nos Secrets do Streamlit e se todas as dependências estão instaladas.")
-                st.subheader("Saídas das tarefas para depuração:")
-                st.markdown("**Saída da Análise (Agente 1):**")
-                st.code(get_task_output_as_string(tarefa_analise.output), language='markdown')
-                st.markdown("**Saída das Ferramentas (Agente 2):**")
-                st.code(get_task_output_as_string(tarefa_ferramentas.output), language='markdown')
-                st.markdown("**Saída do Design (Agente 3):**")
-                st.code(get_task_output_as_string(tarefa_projeto.output), language='json')
-                st.markdown("**Saída da Implementação (Agente 4):**")
-                st.code(get_task_output_as_string(tarefa_implementacao.output), language='text')
