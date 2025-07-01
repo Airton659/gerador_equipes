@@ -1,14 +1,11 @@
 # app.py
 
 # --- INÍCIO DA CORREÇÃO DEFINITIVA DO SQLITE ---
-# Força o uso da versão correta do SQLite que foi instalada via pip.
-# Este bloco DEVE ser o primeiro código a ser executado no script.
 try:
   __import__('pysqlite3')
   import sys
   sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 except (ImportError, KeyError):
-  # KeyError pode acontecer se o módulo não estiver em sys.modules
   pass
 # --- FIM DA CORREÇÃO ---
 
@@ -87,30 +84,14 @@ with col2:
 
 st.divider()
 
-# Bloco para verificar a configuração de API e parar a execução se necessário
-# Isso é feito fora do botão para que o feedback seja imediato para o usuário
-try:
-    if "OPENAI_API_KEY" not in st.secrets or not st.secrets["OPENAI_API_KEY"]:
-        st.error("A chave `OPENAI_API_KEY` não está configurada nos Secrets do Streamlit.")
-        st.info("Por favor, adicione sua chave da OpenAI nos Secrets da aplicação para o deploy funcionar.")
-        st.stop()
-except (FileNotFoundError, KeyError):
-    if not os.getenv("OPENAI_API_KEY"):
-         st.error("Chave de API não encontrada. Para desenvolvimento local, crie um arquivo .env com sua OPENAI_API_KEY.")
-         st.stop()
-
 
 if st.button("Gerar Equipe de Agentes"):
-    # Define as variáveis de ambiente a partir dos secrets para o restante do código usar
-    os.environ["OPENAI_API_KEY"] = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
-    os.environ["OPENAI_MODEL_NAME"] = st.secrets.get("OPENAI_MODEL_NAME", os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
-
+    # ⚠️ LÓGICA DE VERIFICAÇÃO DE SECRETS REMOVIDA PARA O TESTE ⚠️
     if not prompt_usuario:
         st.error("Por favor, descreva a necessidade da equipe antes de continuar.")
     else:
         with st.spinner("Aguarde... A equipe-mestre está se reunindo para analisar sua solicitação..."):
             
-            # CORREÇÃO APLICADA AQUI: Usando o nome correto da variável
             contexto_arquivo_texto = extrair_texto_de_arquivo(arquivo_contexto_carregado)
             
             # --- MONTAGEM E EXECUÇÃO DA EQUIPE-MESTRE ---
