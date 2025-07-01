@@ -8,7 +8,7 @@ from .ferramentas import code_writer_tool, verificador_de_sintaxe_python
 
 # ⚠️ ALTERAÇÃO PARA TESTE: A CHAVE DE API ESTÁ DIRETAMENTE NO CÓDIGO ⚠️
 # SUBSTITUA O TEXTO "sk-..." PELA SUA CHAVE REAL DA OPENAI
-SUA_CHAVE_API = "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" 
+SUA_CHAVE_API = "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" 
 
 # Instanciando o LLM com a chave e o modelo diretamente no código
 llm = ChatOpenAI(
