@@ -6,14 +6,21 @@ import os
 # Importe as ferramentas necessárias para os agentes
 from .ferramentas import code_writer_tool, verificador_de_sintaxe_python
 
-# Voltando para a configuração de LLM simples para manter o custo baixo, conforme solicitado.
-OPENAI_MODEL_NAME = os.getenv("OPENAI_MODEL_NAME")
-llm = ChatOpenAI(model=OPENAI_MODEL_NAME)
+# ⚠️ ALTERAÇÃO PARA TESTE: A CHAVE DE API ESTÁ DIRETAMENTE NO CÓDIGO ⚠️
+# SUBSTITUA O TEXTO "sk-..." PELA SUA CHAVE REAL DA OPENAI
+SUA_CHAVE_API = "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" 
+
+# Instanciando o LLM com a chave e o modelo diretamente no código
+llm = ChatOpenAI(
+    openai_api_key=SUA_CHAVE_API,
+    model="gpt-3.5-turbo"
+)
 
 class AgentesEquipeMestre:
     def __init__(self):
         self.llm = llm
 
+    # ... (o resto da classe permanece exatamente como estava) ...
     def analista_de_requisitos(self):
         return Agent(
             role='Analista de Requisitos de Sistemas de Inteligência Artificial',
