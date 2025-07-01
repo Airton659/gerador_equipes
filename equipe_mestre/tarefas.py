@@ -1,24 +1,23 @@
 # equipe_mestre/tarefas.py
 
 from crewai import Task
-from crewai.agent import Agent # Importe Agent para tipagem se necessário
-import json # Importar a biblioteca json para parsing
+from crewai.agent import Agent
+import json
 
 class TarefasEquipeMestre:
     def __init__(self):
         pass
 
+    # ... (as tarefas analisar_requisitos e identificar_ferramentas permanecem inalteradas) ...
     def analisar_requisitos(self, agent: Agent, comando_usuario: str, contexto_arquivo: str):
         return Task(
             description=f"""
-                Analise a solicitação do usuário e o conteúdo do arquivo de contexto para extrair os
-                requisitos para uma nova equipe de IA.
+                Sua tarefa é **extrair os requisitos detalhados** para uma equipe de IA com base na solicitação do usuário e no conteúdo do arquivo de contexto.
 
-                Seu objetivo é gerar um documento claro e conciso que servirá de base
-                para os outros agentes.
-
-                **A RESPOSTA FINAL DEVE CONTER APENAS O TEXTO FORMATADO EM MARKDOWN**, conforme o exemplo.
-                **NÃO INCLUA NENHUMA FRASE INTRODUTÓRIA, DESPEDIDA, PENSAMENTOS OU QUALQUER TEXTO ADICIONAL FORA DO BLOCO MARKDOWN.**
+                ⚠️ **REGRA CRÍTICA: SUA RESPOSTA FINAL DEVE CONTER APENAS UM BLOCO DE TEXTO EM MARKDOWN.**
+                - NÃO inclua frases como "Final Answer:", "Here is the output", ou pensamentos do agente.
+                - Sua resposta deve começar diretamente com: `# Requisitos da Equipe de IA`
+                - Nada deve vir antes ou depois do bloco Markdown.
 
                 **Solicitação do Usuário:**
                 {comando_usuario}
@@ -26,172 +25,152 @@ class TarefasEquipeMestre:
                 **Contexto do Arquivo:**
                 {contexto_arquivo if contexto_arquivo else "Nenhum contexto de arquivo fornecido."}
 
-                **EXEMPLO DE SAÍDA ESPERADA (APENAS O MARKDOWN, SEM TEXTO EXTRA):**
+                **EXEMPLO DE SAÍDA PERFEITA (APENAS O MARKDOWN):**
                 ```markdown
                 # Requisitos da Equipe de IA
-
                 ## 1. Objetivo Principal:
-                [Descreva o objetivo principal da equipe, por exemplo, 'Gerar conteúdo otimizado para SEO para loja de sapatos veganos']
-
+                [Descreva o objetivo principal]
                 ## 2. Funcionalidades Chave Necessárias:
                 - [Funcionalidade 1]
                 - [Funcionalidade 2]
-                - [Funcionalidade N]
-
                 ## 3. Resultado Final Esperado:
-                [Descreva o resultado concreto, por exemplo, 'Aumento de X% no tráfego orgânico e Y% nas vendas.']
+                [Descreva o resultado esperado]
                 ```
             """,
-            expected_output='Um documento de análise detalhado formatado em Markdown, sem texto adicional.',
+            expected_output='Documento em Markdown iniciando com "# Requisitos da Equipe de IA", sem nenhum texto adicional.',
             agent=agent,
         )
 
-    def identificar_ferramentas(self, agent: Agent, contexto_analise_requisitos: str):
+    def identificar_ferramentas(self, agent: Agent):
         return Task(
-            description=f"""
-                Com base na análise de requisitos fornecida, sua tarefa é identificar e listar
-                as ferramentas da biblioteca `crewai[tools]` que serão essenciais para a equipe
-                a ser criada.
-
+            description="""
+                Com base na análise de requisitos fornecida no contexto, sua tarefa é identificar e listar
+                as ferramentas da biblioteca `crewai[tools]` que serão essenciais para a equipe.
                 Utilize a ferramenta `Catálogo de Ferramentas da CrewAI` para consultar as ferramentas disponíveis.
-
-                **A RESPOSTA FINAL DEVE CONTER APENAS A LISTA EM MARKDOWN**, conforme o exemplo.
-                **NÃO INCLUA NENHUMA FRASE INTRODUTÓRIA, DESPEDIDA, PENSAMENTOS OU QUALQUER TEXTO ADICIONAL FORA DO BLOCO MARKDOWN.**
-
-                **Análise de Requisitos:**
-                {contexto_analise_requisitos}
-
-                **EXEMPLO DE SAÍDA ESPERADA (APENAS O MARKDOWN):**
+                **REGRA MAIS IMPORTANTE:** A SUA RESPOSTA FINAL DEVE CONTER APENAS E SOMENTE A LISTA EM MARKDOWN.
+                NÃO INCLUA "I now can give a great answer", "Final Answer:", pensamentos, ou qualquer outra frase.
+                A SUA RESPOSTA DEVE COMEÇAR DIRETAMENTE COM O PRIMEIRO ITEM DA LISTA, como no exemplo.
+                **Análise de Requisitos (Contexto da Tarefa Anterior):**
+                {context}
+                **EXEMPLO DE SAÍDA PERFEITA (APENAS O MARKDOWN):**
                 ```markdown
                 - DuckDuckGoSearchTool (crewai_tools)
-                - WebsiteSearchTool (crewai_tools)
-                - SeleniumScrapingTool (crewai_tools)
                 ```
             """,
-            expected_output='Uma lista Markdown das ferramentas recomendadas (NomeDaFerramenta (biblioteca)), sem texto adicional.',
+            expected_output='Uma lista Markdown das ferramentas recomendadas (NomeDaFerramenta (biblioteca)), sem nenhum texto adicional.',
             agent=agent,
         )
 
-    def projetar_equipe(self, agent: Agent, analise_requisitos: str, ferramentas_recomendadas: str):
+    def projetar_equipe(self, agent: Agent):
         return Task(
-            description=f"""
-                Você é um Arquiteto de Equipes de IA. Sua tarefa é projetar a estrutura completa da nova equipe,
-                incluindo os Agentes e suas Tarefas, utilizando a análise de requisitos e as ferramentas recomendadas.
+            description="""
+                Você é um Arquiteto de Equipes de IA. Sua missão é transformar os requisitos e ferramentas recebidas em uma estrutura funcional de agentes e tarefas.
+                
+                ⚠️ **REGRA CRÍTICA: A RESPOSTA FINAL DEVE SER EXCLUSIVAMENTE UM OBJETO JSON.**
+                - Nenhum texto antes ou depois do JSON.
+                - O JSON deve seguir rigorosamente a estrutura abaixo.
+                - Qualquer desvio nos nomes das chaves ou formatos causará falhas na próxima etapa.
 
-                **A RESPOSTA FINAL DEVE CONTER APENAS O OBJETO JSON BEM FORMATADO**, conforme o exemplo.
-                **NÃO INCLUA NENHUM TEXTO EXPLICATIVO, PENSAMENTOS OU COMENTÁRIOS FORA DO BLOCO JSON.**
-                **A saída DEVE ser APENAS o objeto JSON.**
+                **ESTRUTURA OBRIGATÓRIA:**
 
-                **IMPORTANTE:**
-                - Inclua as ferramentas RECOMENDADAS PELO AGENTE 2 (com seus nomes EXATOS de classe) nos agentes que as utilizarão.
-                - Use 'Crew' e 'Process.sequential' para a Crew.
-                - Para cada Agente, inclua: 'name', 'role', 'goal', 'backstory', 'llm' (sempre use 'llm' como valor string literal, não 'self.llm'), 'verbose' (sempre 'true'), 'allow_delegation' (sempre 'false'), e 'tools' (lista de strings com nomes das ferramentas).
-                - Para cada Tarefa, inclua: 'name', 'description', 'expected_output', 'agent' (referência ao 'name' do agente responsável), e 'context' (lista de strings referenciando saídas de tarefas anteriores, se houver).
-                - Os valores booleanos para 'verbose' e 'allow_delegation' DEVERÃO ser `true` ou `false` (minúsculas) no JSON.
+                - `agentes`: Lista com objetos contendo:
+                    - `name` (string)
+                    - `role` (string)
+                    - `goal` (string)
+                    - `backstory` (string)
+                    - `llm` (sempre "llm")
+                    - `verbose` (sempre true)
+                    - `allow_delegation` (sempre false)
+                    - `tools` (lista de strings com nomes das classes de ferramentas)
 
-                **Análise de Requisitos (do Agente 1):**
-                {analise_requisitos}
+                - `tarefas`: Lista com objetos contendo:
+                    - `name` (string)
+                    - `description` (string)
+                    - `expected_output` (string)
+                    - `agent` (string correspondente ao `name` do agente)
+                    - `context` (lista de strings com nomes de tarefas anteriores)
 
-                **Ferramentas Recomendadas (do Agente 2):**
-                {ferramentas_recomendadas}
+                **Contexto (Análise + Ferramentas):**
+                {context}
 
-                **EXEMPLO DE SAÍDA JSON ESPERADA (APENAS O JSON, SEM TEXTO EXTRA):**
+                **EXEMPLO DE RESPOSTA VÁLIDA (APENAS O JSON):**
                 ```json
                 {{
-                    "equipe_nome": "Nome da Equipe Gerada (Ex: Equipe de Marketing de Conteúdo)",
                     "agentes": [
                         {{
-                            "name": "Nome do Agente (Ex: 'Estrategista de Conteúdo')",
-                            "role": "Papel do Agente",
-                            "goal": "Objetivo do Agente",
-                            "backstory": "História/Contexto do Agente",
+                            "name": "Especialista de Documentação",
+                            "role": "Gerador de relatórios técnicos",
+                            "goal": "Criar relatórios Markdown baseados em resultados de tarefas.",
+                            "backstory": "Profissional experiente em documentação de sistemas de IA.",
                             "llm": "llm",
                             "verbose": true,
                             "allow_delegation": false,
-                            "tools": ["DuckDuckGoSearchTool", "WebsiteSearchTool"]
-                        }},
-                        {{
-                            "name": "Redator Criativo",
-                            "role": "Criador de Conteúdo",
-                            "goal": "Escrever posts de blog e textos persuasivos.",
-                            "backstory": "Um mestre das palavras com foco em engajamento.",
-                            "llm": "llm",
-                            "verbose": true,
-                            "allow_delegation": false,
-                            "tools": []
+                            "tools": ["MarkdownFormatterTool"]
                         }}
                     ],
                     "tarefas": [
                         {{
-                            "name": "Pesquisa de Mercado",
-                            "description": "Pesquisar tendências de mercado para sapatos veganos.",
-                            "expected_output": "Relatório de tendências de mercado.",
-                            "agent": "Estrategista de Conteúdo",
-                            "context": []
-                        }},
-                        {{
-                            "name": "Escrever Rascunho de Blog Post",
-                            "description": "Escrever um rascunho de post de blog baseado na pesquisa de mercado.",
-                            "expected_output": "Rascunho do post de blog.",
-                            "agent": "Redator Criativo",
-                            "context": ["Pesquisa de Mercado.output"]
+                            "name": "Gerar Documentação",
+                            "description": "Converter os resultados técnicos em um relatório em Markdown.",
+                            "expected_output": "Relatório completo em formato Markdown.",
+                            "agent": "Especialista de Documentação",
+                            "context": ["Resultados Técnicos"]
                         }}
-                    ],
-                    "crew_settings": {{
-                        "process": "Process.sequential",
-                        "verbose": true
-                    }}
+                    ]
                 }}
                 ```
             """,
-            expected_output='Um objeto JSON estritamente formatado com o design completo da nova equipe.',
+            expected_output='Objeto JSON com chaves "agentes" e "tarefas", formatado corretamente, sem qualquer conteúdo adicional.',
             agent=agent,
         )
-    
-    def implementar_equipe_python(self, agent: Agent, plano_design_equipe: str):
+
+    def implementar_equipe_python(self, agent: Agent):
         return Task(
-            description=f"""
-                Você é um Engenheiro de Software de IA. Sua tarefa é converter o "Plano de Design da Equipe"
-                (fornecido em formato JSON) em um **script Python completo e executável** utilizando a biblioteca CrewAI.
+            description="""
+                Você é um Engenheiro de Software especializado em CrewAI. Sua tarefa é transformar o plano JSON recebido no contexto em um script Python totalmente funcional.
 
-                **Seu processo deve ser:**
-                1.  **Analise e PARSEIE o JSON** fornecido em `plano_design_equipe` para extrair todos os detalhes da equipe.
-                2.  Com base nesses detalhes, **gere o código Python COMPLETO para o script da nova equipe como UMA ÚNICA STRING**. Este código DEVE incluir:
-                    -   Todos os imports necessários (CrewAI, langchain_openai, dotenv, os, e ferramentas específicas de `crewai_tools`).
-                    -   Configuração do LLM: `load_dotenv(); llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME"))`.
-                    -   Instanciação de CADA ferramenta listada no plano (e.g., `duckduckgo_tool = DuckDuckGoSearchTool()`).
-                    -   Definição de CADA Agente com todas as propriedades (role, goal, backstory, llm, verbose, allow_delegation, tools - usando as instâncias de ferramentas criadas).
-                    -   Definição de CADA Tarefa com todas as propriedades (description, expected_output, agent, context).
-                    -   Montagem da Crew (Crew(agents=[...], tasks=[...], ...)). Não use `add_agent` ou `add_task`.
-                
-                3.  **A SUA RESPOSTA FINAL DEVE ser a string do CÓDIGO PYTHON GERADO (do passo 2), envolvida em um bloco de código Markdown (`python\\n...código aqui...\\n`).**
-                    **NÃO ENVOLVA A STRING DO CÓDIGO EM UM DICIONÁRIO PARA PASSAR À FERRAMENTA `Escritor de Código Python`.** A ferramenta será chamada automaticamente com o que você retornar como Final Answer, desde que seja uma string no formato de bloco de código Python.
-                    **NÃO inclua nenhum outro texto, pensamentos ou explicações ANTES ou DEPOIS do bloco de código Markdown.**
+                ⚠️ **REGRA CRÍTICA:** Sua resposta final deve ser **APENAS** um bloco de código Python Markdown.
+                - Comece com ```python
+                - Termine com ```
+                - Nada fora desse bloco será aceito.
 
-                **Plano de Design da Equipe (do Agente 3 - em JSON):**
-                {plano_design_equipe}
+                **ETAPAS OBRIGATÓRIAS DO SCRIPT:**
+
+                1. **Imports essenciais:** Use o exemplo abaixo como guia.
+                2. **Configuração inicial:** `load_dotenv()` e `llm = ChatOpenAI(...)`.
+                3. **Instanciação de ferramentas:** `nome_tool = ClasseTool()`.
+                4. **Instanciação dos agentes:** Crie cada agente com `Agent(...)`.
+                5. **Instanciação das tarefas:** Crie cada tarefa com `Task(...)`.
+                6. **Montagem da crew:** Crie o objeto `Crew(...)`.
+
+                ---
+                **EXEMPLO DE IMPORTS CORRETOS:**
+                ```python
+                import os
+                from dotenv import load_dotenv
+                from crewai import Agent, Task, Crew, Process
+                from langchain_openai import ChatOpenAI
+                # Substitua abaixo pelas ferramentas REAIS necessárias, extraídas do JSON
+                from crewai_tools import DuckDuckGoSearchTool, FileReadTool 
+                ```
+                ---
+
+                **Plano JSON da Equipe:**
+                {context}
             """,
-            expected_output='APENAS o código Python completo do script da nova equipe, formatado estritamente dentro de um bloco de código Markdown (`python\\n...código aqui...\\n`).',
+            expected_output='Bloco de código Python válido, completo e funcional, formatado corretamente com ```python.',
             agent=agent,
-            # Adicionando uma instrução de back-end para tentar forçar o formato correto da saída.
-            # Esta parte não faz parte do código, mas é uma explicação do ajuste de mentalidade do agente.
-            # O agente precisa entender que o 'expected_output' é o formato final.
-            # O ajuste real é nas instruções acima, enfatizando "APENAS a string... envolvida em um bloco de código Markdown".
-            # E garantindo que a implementação do LLM siga essa instrução.
         )
 
-    def validar_codigo(self, agent: Agent, script_python: str):
+    def validar_codigo(self, agent: Agent):
         return Task(
-            description=f"""
+            description="""
                 Você é um Revisor de Qualidade de Código. Sua tarefa é garantir que o script Python
-                fornecido seja sintaticamente válido e livre de erros óbvios.
-
+                fornecido no contexto seja sintaticamente válido e livre de erros óbvios.
                 Utilize a ferramenta `Verificador de Sintaxe Python` (`verificador_de_sintaxe_python`)
                 para analisar o código.
-
-                **Script Python a ser Validado (do Agente 4):**
-                {script_python}
-
+                **Script Python a ser Validado (do Agente 4, do contexto):**
+                {context}
                 Sua **RESPOSTA FINAL** deve ser apenas uma das seguintes frases:
                 - "Validação bem-sucedida: O script Python está sintaticamente válido."
                 - "Erro de validação: [Mensagem de erro da ferramenta]."

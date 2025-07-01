@@ -4,8 +4,9 @@ from crewai import Agent
 from langchain_openai import ChatOpenAI
 import os
 # Importe as ferramentas necessárias para os agentes
-from .ferramentas import code_writer_tool, verificador_de_sintaxe_python # Importe também o verificador
+from .ferramentas import code_writer_tool, verificador_de_sintaxe_python
 
+# Voltando para a configuração de LLM simples para manter o custo baixo, conforme solicitado.
 OPENAI_MODEL_NAME = os.getenv("OPENAI_MODEL_NAME")
 llm = ChatOpenAI(model=OPENAI_MODEL_NAME)
 
@@ -15,9 +16,18 @@ class AgentesEquipeMestre:
 
     def analista_de_requisitos(self):
         return Agent(
-            role='Analista de Requisitos de IA',
-            goal='Interpretar a solicitação do usuário e o conteúdo do arquivo de contexto para criar uma especificação clara e detalhada dos requisitos da equipe a ser criada.',
-            backstory='Com vasta experiência em engenharia de requisitos para sistemas de IA, este agente é meticuloso na extração e documentação de necessidades, garantindo que nenhum detalhe importante seja perdido.',
+            role='Analista de Requisitos de Sistemas de Inteligência Artificial',
+            goal=(
+                'Analisar a solicitação do usuário e gerar, como única saída, um documento de requisitos '
+                'funcionais e não funcionais em **formato Markdown**. O agente **nunca deve incluir explicações, '
+                'comentários ou texto fora do escopo do documento**.'
+            ),
+            backstory=(
+                'Especialista em engenharia de requisitos com profundo conhecimento em projetos de sistemas baseados '
+                'em IA. Possui vasta experiência em entrevistas com stakeholders, levantamento de requisitos e '
+                'documentação técnica. É meticuloso, segue padrões rigorosos de formatação e é comprometido em entregar '
+                'documentos claros, completos e objetivos exclusivamente em Markdown.'
+            ),
             llm=self.llm,
             verbose=True,
             allow_delegation=False
@@ -25,9 +35,16 @@ class AgentesEquipeMestre:
 
     def especialista_em_ferramentas(self, ferramentas_disponiveis):
         return Agent(
-            role='Especialista em Ferramentas de Agentes de IA',
-            goal='Com base na análise de requisitos, determinar precisamente quais ferramentas da biblioteca crewai[tools] a equipe gerada necessitará.',
-            backstory='Este agente possui um conhecimento enciclopédico sobre as ferramentas disponíveis no ecossistema CrewAI, sabendo exatamente qual ferramenta se encaixa em cada necessidade.',
+            role='Especialista em Ferramentas para Agentes de IA',
+            goal=(
+                'Analisar os requisitos fornecidos e gerar, como única saída, uma lista clara e objetiva das '
+                '**ferramentas recomendadas em formato Markdown**. Nenhum comentário ou explicação adicional deve ser incluído.'
+            ),
+            backstory=(
+                'Este agente é um verdadeiro catálogo vivo das ferramentas disponíveis no ecossistema CrewAI. '
+                'Possui profundo conhecimento técnico e uma mentalidade focada em precisão e organização. '
+                'É obcecado por respeitar formatos e entregar exclusivamente listas em Markdown conforme solicitado.'
+            ),
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
@@ -36,19 +53,33 @@ class AgentesEquipeMestre:
 
     def designer_de_equipes(self):
         return Agent(
-            role='Arquiteto de Equipes de IA',
-            goal='Projetar a estrutura completa da nova equipe, incluindo papéis, objetivos, histórias de fundo e tarefas, utilizando a análise de requisitos e as ferramentas recomendadas.',
-            backstory='Um arquiteto de sistemas de IA experiente, com um talento especial para construir equipes eficientes e coesas. Ele traduz requisitos em estruturas de agentes e tarefas, garantindo clareza e funcionalidade.',
+            role='Arquiteto de Equipes de Inteligência Artificial',
+            goal=(
+                'Projetar a estrutura completa de uma equipe de agentes de IA com base na análise de requisitos e nas '
+                'ferramentas recomendadas. A estrutura deve incluir papéis, objetivos, histórias de fundo e tarefas específicas.'
+            ),
+            backstory=(
+                'Com ampla experiência em arquitetura de sistemas multiagentes, este especialista domina a criação '
+                'de times coesos, funcionais e orientados a resultados. Sabe como transformar especificações complexas '
+                'em estruturas organizadas e eficientes.'
+            ),
             llm=self.llm,
             verbose=True,
             allow_delegation=False
         )
-    
+
     def implementador_de_equipes_python(self):
         return Agent(
-            role='Engenheiro de Software de IA',
-            goal='Converter o plano de design detalhado da equipe em um script Python funcional, bem comentado e que siga as melhores práticas da biblioteca CrewAI.',
-            backstory='Com um olhar afiado para código limpo e eficiente, este engenheiro de software é um mestre em transformar especificações em soluções de software robustas.',
+            role='Engenheiro de Software Especializado em IA',
+            goal=(
+                'Converter o plano de design detalhado da equipe em um script Python funcional, utilizando a biblioteca '
+                '**CrewAI**, com código limpo, bem comentado e estruturado segundo as melhores práticas.'
+            ),
+            backstory=(
+                'Este engenheiro é especialista em transformar especificações técnicas em código de alta qualidade. '
+                'Tem um olhar clínico para padrões de projeto, modularidade e clareza. Seu foco é entregar soluções '
+                'robustas e bem documentadas.'
+            ),
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
@@ -57,11 +88,17 @@ class AgentesEquipeMestre:
 
     def validador_de_codigo(self):
         return Agent(
-            role='Revisor de Qualidade de Código',
-            goal='Garantir que o script Python gerado pelo Implementador seja sintaticamente válido e livre de erros óbvios.',
-            backstory='Um analista de QA com expertise em código Python, implacável na busca por erros e inconsistências sintáticas.',
+            role='Revisor de Qualidade e Validação de Código Python',
+            goal=(
+                'Analisar o script Python gerado pelo implementador e garantir que esteja sintaticamente correto, '
+                'livre de erros e pronto para execução sem falhas.'
+            ),
+            backstory=(
+                'Este revisor atua como o guardião da qualidade. Com forte domínio de Python e padrões de validação, '
+                'é minucioso na detecção de erros, inconsistências e falhas lógicas. Não aprova nada que não esteja impecável.'
+            ),
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
-            tools=[verificador_de_sintaxe_python] # Atribuindo a ferramenta de validação
+            tools=[verificador_de_sintaxe_python]
         )
