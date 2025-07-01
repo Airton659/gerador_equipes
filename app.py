@@ -1,4 +1,17 @@
 # app.py
+
+# --- INÍCIO DA CORREÇÃO DEFINITIVA DO SQLITE ---
+# Força o uso da versão correta do SQLite que foi instalada via pip.
+# Este bloco DEVE ser o primeiro código a ser executado no script.
+try:
+  __import__('pysqlite3')
+  import sys
+  sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+except ImportError:
+  pass
+# --- FIM DA CORREÇÃO ---
+
+
 import streamlit as st
 from dotenv import load_dotenv
 import os
@@ -40,16 +53,13 @@ def extrair_texto_de_arquivo(arquivo_carregado):
             os.remove(nome_arquivo)
     return texto
 
-# --- FUNÇÃO HELPER MELHORADA PARA EXTRAIR SAÍDA ---
+# --- FUNÇÃO HELPER PARA EXTRAIR SAÍDA ---
 def get_task_output_as_string(task_output) -> str:
     """Extrai a saída da tarefa de forma mais robusta."""
     if task_output is None:
         return ""
-    # A saída de uma tarefa executada é um objeto TaskOutput.
-    # A resposta final do agente fica no atributo 'raw_output'.
     if hasattr(task_output, 'raw_output') and task_output.raw_output:
         return task_output.raw_output
-    # Fallback para o caso de o objeto ser uma string ou outro tipo.
     return str(task_output)
 
 
@@ -80,6 +90,14 @@ if st.button("Gerar Equipe de Agentes"):
     if not prompt_usuario:
         st.error("Por favor, descreva a necessidade da equipe antes de continuar.")
     else:
+        # Configurando a chave de API a partir dos Secrets do Streamlit
+        try:
+            os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+        except FileNotFoundError:
+            st.error("Arquivo de secrets não encontrado. Crie um arquivo .streamlit/secrets.toml localmente ou adicione o Secret no app do Streamlit Cloud.")
+        except KeyError:
+            st.error("A chave OPENAI_API_KEY não foi encontrada nos seus Secrets. Por favor, adicione-a.")
+
         with st.spinner("Aguarde... A equipe-mestre está se reunindo para analisar sua solicitação..."):
             
             contexto_arquivo_texto = extrair_texto_de_arquivo(arquivo_contexto_carregado)
@@ -107,7 +125,7 @@ if st.button("Gerar Equipe de Agentes"):
             tarefa_ferramentas = tarefas_creator.identificar_ferramentas(agent=especialista)
             tarefa_projeto = tarefas_creator.projetar_equipe(agent=designer)
             tarefa_implementacao = tarefas_creator.implementar_equipe_python(agent=implementador)
-            tarefa_validacao = tarefas_creator.validar_codigo(agent=validador)
+            tarefa_validacao = tarefas_creator.validar_codigo(agent=agent)
             
             # Definindo o contexto (dependências) para cada tarefa.
             tarefa_ferramentas.context = [tarefa_analise]
@@ -147,7 +165,7 @@ if st.button("Gerar Equipe de Agentes"):
 
             except Exception as e:
                 st.error(f"Ocorreu um erro durante a execução da equipe: {e}")
-                st.info("Verifique se sua chave de API do LLM está configurada corretamente no arquivo .env e se todas as dependências estão instaladas.")
+                st.info("Verifique se sua chave de API do LLM está configurada corretamente nos Secrets do Streamlit e se todas as dependências estão instaladas.")
                 st.subheader("Saídas das tarefas para depuração:")
                 # Exibindo os outputs brutos para ajudar a depurar
                 st.markdown("**Saída da Análise (Agente 1):**")
